@@ -12,3 +12,7 @@ Why not?
 ## How
 
 Running k8s locally using *placeholder* and testing locally.
+
+# Credit
+
+Original code from https://github.com/shraddhaag/1brc
