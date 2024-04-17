@@ -11,7 +11,7 @@ Why not?
 
 ## How
 
-Running k8s locally using *placeholder* and testing locally.
+Running k8s locally using minikube and testing locally.
 
 # Credit
 
