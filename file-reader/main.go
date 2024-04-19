@@ -12,7 +12,8 @@ import (
 )
 
 const CHUNK_SIZE int = 64 * 1024 * 1024
-const PARSER_URL = "parser-svc.default.svc.cluster.local"
+
+var PARSER_URL = os.Getenv("PARSER_URL")
 
 func main() {
 	res := make(chan map[string]cityTemperatureInfo)

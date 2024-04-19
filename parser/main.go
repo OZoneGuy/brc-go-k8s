@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-const COLLECTOR_URL = "collector-svc.default.svc.cluster.local"
+var COLLECTOR_URL = os.Getenv("COLLECTOR_URL")
 
 func main() {
 

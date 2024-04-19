@@ -20,6 +20,9 @@ spec:
         imagePullPolicy: Never
         ports:
         - containerPort: 80
+        env:
+          - name: READER_URL
+            value: "http://file-reader-svc.default.svc.cluster.local/complete"
 ---
 apiVersion: v1
 kind: Service

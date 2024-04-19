@@ -20,6 +20,16 @@ spec:
         imagePullPolicy: Never
         ports:
         - containerPort: 80
+        volumeMounts:
+          - mountPath: /data
+            name: data-mount
+        env:
+          - name: PARSER_URL
+            value: "http://parser-svc.default.svc.cluster.local/parse"
+      volumes:
+        - name: data-mount
+          hostPath:
+            path: /data
 ---
 apiVersion: v1
 kind: Service

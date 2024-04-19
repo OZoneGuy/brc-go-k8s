@@ -20,6 +20,9 @@ spec:
         imagePullPolicy: Never
         ports:
         - containerPort: 80
+        env:
+          - name: COLLECTOR_URL
+            value: "http://collector-svc.default.svc.cluster.local/collect"
 ---
 apiVersion: v1
 kind: Service

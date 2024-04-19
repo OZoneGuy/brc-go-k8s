@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 )
 
-const PARENT_URL = "file-loader-svc.default.svc.cluster.local"
+var PARENT_URL = os.Getenv("READER_URL")
 
 var mapOfTemp sync.Map = sync.Map{}
 
