@@ -17,6 +17,7 @@ spec:
       containers:
       - name: collector
         image: collector
+        imagePullPolicy: Never
         ports:
         - containerPort: 80
 ---

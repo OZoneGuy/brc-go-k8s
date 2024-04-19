@@ -1,32 +1,33 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: file-loader
+  name: file-reader
   labels:
-    app: file-loader
+    app: file-reader
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: file-loader
+      app: file-reader
   template:
     metadata:
       labels:
-        app: file-loader
+        app: file-reader
     spec:
       containers:
-      - name: file-loader
-        image: file-loader
+      - name: file-reader
+        image: docker.io/library/file-reader:latest
+        imagePullPolicy: Never
         ports:
         - containerPort: 80
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: file-loader-svc
+  name: file-reader-svc
 spec:
   selector:
-    app: file-loader
+    app: file-reader
   ports:
     - protocol: TCP
       port: 80
