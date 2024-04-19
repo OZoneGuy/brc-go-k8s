@@ -3,9 +3,11 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"os"
 )
 
 var COLLECTOR_URL = os.Getenv("COLLECTOR_URL")
@@ -14,18 +16,27 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /parse", func(w http.ResponseWriter, r *http.Request) {
-
-		result := make(map[string]cityTemperatureInfo)
+		fmt.Println("Recieved request")
+		result := struct {
+			Count  int                            `json:"count"`
+			Cities map[string]cityTemperatureInfo `json:"cities"`
+		}{
+			Count:  0,
+			Cities: make(map[string]cityTemperatureInfo),
+		}
 		var start int
 		var city string
 
+		fmt.Println("Reading body")
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, "Failed to read request body", http.StatusBadRequest)
 			return
 		}
+		fmt.Printf("Recieved bytes: %v\n", len(body))
 
 		// Respond to caller
+		fmt.Println("Responding to caller to not block")
 		w.WriteHeader(http.StatusAccepted)
 		_, err = w.Write([]byte{})
 		if err != nil {
@@ -34,44 +45,51 @@ func main() {
 			panic(err)
 		}
 
-		stringBuf := string(body)
-		for index, char := range stringBuf {
-			switch char {
-			case ';':
-				city = stringBuf[start:index]
-				start = index + 1
-			case '\n':
-				if (index-start) > 1 && len(city) != 0 {
-					temp := customStringToIntParser(stringBuf[start:index])
+		go func() {
+			stringBuf := string(body)
+			fmt.Println("Starting parse loop")
+			for index, char := range stringBuf {
+				switch char {
+				case ';':
+					city = stringBuf[start:index]
 					start = index + 1
+				case '\n':
+					if (index-start) > 1 && len(city) != 0 {
+						temp := customStringToIntParser(stringBuf[start:index])
+						start = index + 1
 
-					if val, ok := result[city]; ok {
-						val.Count++
-						val.Sum += temp
-						if temp < val.Min {
-							val.Min = temp
-						}
+						if val, ok := result.Cities[city]; ok {
+							val.Count++
+							val.Sum += temp
+							if temp < val.Min {
+								val.Min = temp
+							}
 
-						if temp > val.Max {
-							val.Max = temp
+							if temp > val.Max {
+								val.Max = temp
+							}
+							result.Cities[city] = val
+							result.Count++
+						} else {
+							result.Cities[city] = cityTemperatureInfo{
+								Count: 1,
+								Min:   temp,
+								Max:   temp,
+								Sum:   temp,
+							}
+							result.Count++
 						}
-						result[city] = val
-					} else {
-						result[city] = cityTemperatureInfo{
-							Count: 1,
-							Min:   temp,
-							Max:   temp,
-							Sum:   temp,
-						}
+						city = ""
 					}
-					city = ""
 				}
 			}
-		}
 
-		// Send to last MS
-		resBytes, err := json.Marshal(result)
-		http.Post(COLLECTOR_URL, "application/json", bytes.NewReader(resBytes))
+			fmt.Println("Finished parsing. Sending data to collector")
+			// Send to last MS
+			fmt.Printf("Data to send: %v\n", result.Count)
+			resBytes, _ := json.Marshal(result)
+			http.Post(COLLECTOR_URL, "application/json", bytes.NewReader(resBytes))
+		}()
 	})
 
 	server := &http.Server{
