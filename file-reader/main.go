@@ -19,8 +19,7 @@ func main() {
 	res := make(chan map[string]cityTemperatureInfo)
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /start", func(w http.ResponseWriter, r *http.Request) {
-		// TODO: set file path
-		filePath := "tmp"
+		filePath := "/data/measurements.txt"
 		file, err := os.Open(filePath)
 		if err != nil {
 			http.Error(w, "Could not open file", http.StatusInternalServerError)
@@ -53,32 +52,29 @@ func main() {
 
 			// NOTE: Might need to make it a coroutine
 			// Need to get the total result to the user somehow...
-			resp, err := http.Post(PARSER_URL, "application/octet-stream", bytes.NewReader(toSend))
-			if resp.StatusCode >= 300 {
-				err = errors.Wrap(err, "Failed to make request to parser MS")
+			go http.Post(PARSER_URL, "application/octet-stream", bytes.NewReader(toSend))
+			/* if err != nil || resp.StatusCode != http.StatusAccepted {
+				if err == nil {
+					err = errors.Errorf("Failed to make request to parser MS: %v", resp)
+				} else {
+					err = errors.Wrap(err, "Failed to make request to parser MS")
+				}
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
-			}
+			} */
 		}
 
 		// NOTE: We could have a channel that waits on another MS to make a request
 		// here and return the final value. Could be a solution to returning the
 		// result.
-
 		result := <-res
 		resBytes, err := json.Marshal(result)
-		w.WriteHeader(http.StatusOK)
 		w.Write(resBytes)
 	})
 
 	mux.HandleFunc("POST /complete", func(w http.ResponseWriter, r *http.Request) {
-		body, err := io.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, "Failed to read request", http.StatusBadRequest)
-			return
-		}
 		result := make(map[string]cityTemperatureInfo)
-		err = json.Unmarshal(body, &result)
+		err := json.NewDecoder(r.Body).Decode(&result)
 		if err != nil {
 			http.Error(w, "Failed to marshal request", http.StatusBadRequest)
 			return

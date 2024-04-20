@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -16,7 +15,6 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /parse", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("Recieved request")
 		result := struct {
 			Count  int                            `json:"count"`
 			Cities map[string]cityTemperatureInfo `json:"cities"`
@@ -27,16 +25,13 @@ func main() {
 		var start int
 		var city string
 
-		fmt.Println("Reading body")
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, "Failed to read request body", http.StatusBadRequest)
 			return
 		}
-		fmt.Printf("Recieved bytes: %v\n", len(body))
 
 		// Respond to caller
-		fmt.Println("Responding to caller to not block")
 		w.WriteHeader(http.StatusAccepted)
 		_, err = w.Write([]byte{})
 		if err != nil {
@@ -47,7 +42,6 @@ func main() {
 
 		go func() {
 			stringBuf := string(body)
-			fmt.Println("Starting parse loop")
 			for index, char := range stringBuf {
 				switch char {
 				case ';':
@@ -84,9 +78,7 @@ func main() {
 				}
 			}
 
-			fmt.Println("Finished parsing. Sending data to collector")
 			// Send to last MS
-			fmt.Printf("Data to send: %v\n", result.Count)
 			resBytes, _ := json.Marshal(result)
 			http.Post(COLLECTOR_URL, "application/json", bytes.NewReader(resBytes))
 		}()
